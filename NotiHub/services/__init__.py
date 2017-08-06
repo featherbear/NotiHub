@@ -20,4 +20,4 @@ for _, servicenamefull, _ in pkgutil.walk_packages(path=pkgutil.extend_path(__pa
             version[servicename] = ""
         globals()[servicename] = service.service
     except Exception as e:
-        dprint("    Error importing " + servicenamefull + " - " + e)
+        dprint("    Error importing " + servicenamefull + " - " + str(e))
