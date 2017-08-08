@@ -10,17 +10,18 @@ The following code is licensed under the GNU Public License Version v3.0
 
 __VERSION__ = "0.0.1"
 import pushbullet
+from .__stub__ import Service
 
 pushbullet.Pushbullet._push_ = pushbullet.Pushbullet._push
 pushbullet.Pushbullet._push = lambda self, data: self._push_(
     {**data, "source_device_iden": self.device_iden} if hasattr(self, "device_iden") else data)
 
 
-class service():
-    def __init__(self, api_key, *, send, receive):
-        self.canSend = send
-        self.canReceive = receive
-        self.pushbullet = pushbullet.Pushbullet(api_key)
+class service(Service):
+    _NAME = "PUSHBULLET"
+    _AUTHMETHOD = Service.TYPE_API
+    def connect(self):
+        self.pushbullet = pushbullet.Pushbullet(self.authorisation)
         self.listener = pushbullet.Listener(self.pushbullet,
                                             lambda event: (self._pushFetch() if event["type"] == "tickle" else None))
 
@@ -32,8 +33,8 @@ class service():
             except:
                 print("Error: Unable to create device")
                 raise
-
         self.last_push = 0
+        self.listen()
 
     def _pushFetch(self):
         pushes = self.pushbullet.get_pushes(self.last_push)
@@ -52,7 +53,7 @@ class service():
     def send(self, data, title="NotiHub", device=None):
         if self.canSend:
             return self.pushbullet.push_note(title, data, device=(
-            type('s', (), {"device_iden": device}) if type(device) == str else device))
+                type('s', (), {"device_iden": device}) if type(device) == str else device))
 
     def listen(self):
         if self.canReceive:
@@ -61,5 +62,3 @@ class service():
     def stopListen(self):
         self.listener.close()
 
-    def handler(self, ts, title, body):
-        pass

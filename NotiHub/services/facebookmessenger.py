@@ -10,18 +10,22 @@ The following code is licensed under the GNU Public License Version v3.0
 """
 
 __VERSION__ = "0.0.1"
+
 import fbchat
+from .__stub__ import Service
 
-
-class service():
+class service(Service):
+    _NAME = "PUSHBULLET"
+    _AUTHMETHOD = Service.TYPE_PASSWORD
     class Messenger(fbchat.Client):
+        def registerOnMessage(self, function):
+            self.handler = function
         def onMessage(self, message, author_id, thread_id, thread_type, ts, **kwargs):
-            pass
-
-    def __init__(self, email, password, *, send, receive):
-        self.canSend = send
-        self.canReceive = receive
-        self.messenger = self.Messenger(email, password)
+            self.handler(ts,thread_id, author_id, message)
+    def connect(self):
+        self.messenger = self.Messenger(*self.authorisation)
+        self.messenger.registerOnMessage(self.handler)
+        self.listen()
 
     def send(self, thread, data):
         if self.canSend:
@@ -32,7 +36,7 @@ class service():
                 'load_read_receipts': False,
                 'before': None
             })).get("thread_type") == "GROUP" else 1
-            return self.sendMessage(data, thread_id=thread, thread_type=thread_type)
+            return self.messenger.sendMessage(data, thread_id=thread, thread_type=thread_type)
 
     def listen(self):
         if self.canReceive: self.messenger.listen()

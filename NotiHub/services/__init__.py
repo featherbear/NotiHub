@@ -12,6 +12,7 @@ dprint("Importing services")
 for _, servicenamefull, _ in pkgutil.walk_packages(path=pkgutil.extend_path(__path__, __name__), prefix=__name__ + '.'):
     try:
         servicename = servicenamefull[len(__name__) + 1:]
+        if servicename == "__stub__": continue
         dprint("  Importing " + servicenamefull)
         service = importlib.import_module(servicenamefull)
         try:
