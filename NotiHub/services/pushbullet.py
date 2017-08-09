@@ -22,7 +22,7 @@ class service(Service):
     __NAME__ = "PUSHBULLET"
 
     def connect(self):
-        self.pushbullet = pushbullet.Pushbullet(self.config.login)
+        self.pushbullet = pushbullet.Pushbullet(*self.config.getAuth())
         self.listener = pushbullet.Listener(self.pushbullet,
                                             lambda event: (self._pushFetch() if event["type"] == "tickle" else None))
 

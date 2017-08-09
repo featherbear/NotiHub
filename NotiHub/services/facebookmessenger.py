@@ -26,12 +26,13 @@ class service(Service):
             self.handler(ts, thread_id, author_id, message)
 
     def connect(self):
-        self.messenger = self.Messenger(self.config.login, self.config.password)
+        self.messenger = self.Messenger(*self.config.getAuth())
         self.messenger.registerOnMessage(self.config.handler)
         self.listen()
 
     def send(self, thread, data):
         if self.canSend:
+            # TODO what does the number do!??!
             thread_type = 2 if self.messenger.graphql_request(fbchat.GraphQL(doc_id='1386147188135407', params={
                 'id': thread,
                 'message_limit': 0,

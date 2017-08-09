@@ -74,3 +74,68 @@ class Config():
     def save(self):
         raise Exception("Not Implemented")
         pass
+
+
+import struct
+
+
+class b91:
+    # https://github.com/aberaud/base91-python/blob/master/base91.py
+    # Base91 encode/decode for Python 2 and Python 3
+    #
+    # Copyright (c) 2012 Adrien Beraud
+    # Copyright (c) 2015 Guillaume Jacquenot
+    # All rights reserved.
+
+    cipher = "n;:9xzNRr+oT$?_jeY>g6XBHfD[2y<FI3w*kQ8{^c}1\"sCuK(]M,Sv4LGt7ladW#Z5JU`E0O.p=%ihqm)@|P/&Ab!~V"
+    cipher_table = dict((c, i) for i, c in enumerate(cipher))
+
+    def decode(encoded_str):
+        v = -1
+        b = 0
+        n = 0
+        out = bytearray()
+        for strletter in encoded_str:
+            if not strletter in b91.cipher_table:
+                continue
+            c = b91.cipher_table[strletter]
+            if (v < 0):
+                v = c
+            else:
+                v += c * 91
+                b |= v << n
+                n += 13 if (v & 8191) > 88 else 14
+                while True:
+                    out += struct.pack('B', b & 255)
+                    b >>= 8
+                    n -= 8
+                    if not n > 7:
+                        break
+                v = -1
+        if v + 1:
+            out += struct.pack('B', (b | v << n) & 255)
+        return out
+
+    def encode(bindata):
+        b = 0
+        n = 0
+        out = ''
+        for count in range(len(bindata)):
+            byte = bindata[count:count + 1]
+            b |= struct.unpack('B', byte)[0] << n
+            n += 8
+            if n > 13:
+                v = b & 8191
+                if v > 88:
+                    b >>= 13
+                    n -= 13
+                else:
+                    v = b & 16383
+                    b >>= 14
+                    n -= 14
+                out += b91.cipher[v % 91] + b91.cipher[v // 91]
+        if n:
+            out += b91.cipher[b % 91]
+            if n > 7 or b > 90:
+                out += b91.cipher[b // 91]
+        return out
