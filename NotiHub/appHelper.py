@@ -1,6 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+NotiHub
+Copyright 2017 Andrew Wong <featherbear@navhaxs.au.eu.org>
+
+The following code is licensed under the GNU Public License Version v3.0
+"""
+
 import threading
-from NotiHub.services import __init__, __stub__
-import os.path
+
+import NotiHub.services
+from NotiHub.services import __stub__
 
 
 class serviceInstant(threading.Thread):
@@ -20,34 +29,48 @@ class serviceInstant(threading.Thread):
 
 class Config():
     filename = "notihub.cfg"
+
     def __init__(self):
         self.load()
-    def load(self):
-        file = open(self.filename)
-        self.lol = ""
-        config = {}
-        for line in file.readlines():
-            line = line.strip()
-            try:
-                if line:
-                    if line[0] == '#': next
-                    if line[0] == '[':
-                        section = line[1:-1]
-                        if not config.has_key(section):
-                            config[section] = {}
-                    else:
-                        (key, val) = line.split('=', 1)
-                        if not config[section].has_key(key):
-                            config[section][key] = []
-                        config[section][key].append(val)
-            except Exception as e:
-                print(str(e)," (line: %s)" % str(line))
-        print(config)
 
-        for servicename in __init__.version:
-            service : __stub__.Service = getattr(__init__, servicename)
-            service._NAME
-            service._AUTHMETHOD
-        #return config
+    def load(self):
+        print("load")
+        config = {}
+        try:
+            with open(self.filename, "r") as file:
+                for line in file.readlines():
+                    line = line.strip()
+                    try:
+                        if line:
+                            if line[0] == '#': next
+                            if line[0] == '[':
+                                section = line[1:-1].lower()
+                                if not section in config:
+                                    config[section] = []
+                                config[section].append({})
+                            else:
+                                key, val = line.split('=', 1)
+                                key, val = key.strip().lower(), val.strip()
+                                config[section][-1][key] = val if val.lower() not in ["y", "yes", "true", "n", "no",
+                                                                                      "false"] else val[
+                                                                                                        0].lower() > "q"  # HHAHA I'M SO LAZY
+                    except Exception as e:
+                        print("Error", str(e), " (line: %s)" % str(line))
+        except FileNotFoundError:
+            print(self.filename, "was not found, using defaults...")
+            # TODO LOAD DEFAULTS
+        self.services = {}
+        for category in config:
+            print(category)
+            if category == "notihub":
+                self.notihub = config["notihub"][0]
+            elif category == "web":
+                self.web = config["web"][0]
+            elif category in NotiHub.services.version:
+                self.services[category] = []
+                for service in config[category]:
+                    self.services[category].append(__stub__.ConfigModel(service))
+
     def save(self):
+        raise Exception("Not Implemented")
         pass
