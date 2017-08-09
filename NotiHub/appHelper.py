@@ -12,29 +12,90 @@ import NotiHub.services
 from NotiHub.services import __stub__
 
 
-class serviceInstant(threading.Thread):
-    def __init__(self, serviceClass, *options, **koptions):
-        super().__init__()
-        self.service: __stub__.Service = serviceClass(*options, **koptions)
+class serviceManger():
+    class serviceInstant(threading.Thread):
+        def __init__(self, serviceClass: __stub__.Service, config:__stub__.ConfigModel, id: int):
+            super().__init__()
 
-    def run(self):
-        self.service.connect()
+            self.service = serviceClass(config)
+            self.meta = {
+                "id": id,
+                "is_api": self.service.config.isAPI,
+                "type": self.service.__NAME__,
+                "can_send": self.service.config.send,
+                "can_receive": self.service.config.receive,
+            }
 
-    def stopListen(self):
-        self.service.stopListen()
+        def run(self):
+            self.service.connect()
+            print("Connecting",self.meta["id"],self.meta["type"])
+
+        def stopListen(self):
+            self.service.stopListen()
+
+        def listen(self):
+            self.service.listen()
+
+    def __init__(self):
+        self.services = []
+
+    def create(self, service: __stub__.Service, config: __stub__.ConfigModel):
+        if type(service) not in [str, object]: raise Exception("Invalid service") # TODO CHECK
+        if type(service) is str:
+            if service in NotiHub.services.version:
+                service = getattr(NotiHub.services, service)
+                print("Successfully got service",service)
+            else:
+                raise Exception("Could not find service:", service)
+        self.services.append(self.serviceInstant(service,config, len(self.services) + 1))
+        print("Created new service! ID:", len(self.services))
+
+    def query(self, general: str = None, *, is_api: bool = None, can_send: bool = None, can_receive: bool = None,
+              type: str = None):
+        result = [service for service in self.services]
+        if general:
+            result = filter(lambda s: any(result in p for p in s.meta.values()), result)
+        if is_api:
+            result = filter(lambda s: s.meta["is_api"], result)
+        if can_send:
+            result = filter(lambda s: s.meta["can_send"], result)
+        if can_receive:
+            result = filter(lambda s: s.meta["can_receive"], result)
+        if type:
+            result = filter(lambda s: s.meta["type"].lower() == type.lower(), result)
+        return list(result)
+
+    def start(self):
+        pass
+
+    def startAll(self):
+        [service.start() for service in self.services]
+
+    def stop(self):
+        pass
+
+    def stopAll(self):
+        pass
 
     def listen(self):
-        self.service.listen()
+        pass
+
+    def listenAll(self):
+        [service.listen() for service in self.services]
+
+    def silence(self):
+        pass
+
+    def silenceAll(self):
+        [service.stopListen() for service in self.services]
 
 
 class Config():
-    filename = "notihub.cfg"
-
-    def __init__(self):
+    def __init__(self, filename="notihub.cfg"):
+        self.filename = filename
         self.load()
 
     def load(self):
-        print("load")
         config = {}
         try:
             with open(self.filename, "r") as file:
@@ -61,7 +122,6 @@ class Config():
             # TODO LOAD DEFAULTS
         self.services = {}
         for category in config:
-            print(category)
             if category == "notihub":
                 self.notihub = config["notihub"][0]
             elif category == "web":
@@ -114,28 +174,34 @@ class b91:
                 v = -1
         if v + 1:
             out += struct.pack('B', (b | v << n) & 255)
-        return out
+        return out.decode("utf-8")
 
-    def encode(bindata):
-        b = 0
-        n = 0
-        out = ''
-        for count in range(len(bindata)):
-            byte = bindata[count:count + 1]
-            b |= struct.unpack('B', byte)[0] << n
-            n += 8
-            if n > 13:
-                v = b & 8191
-                if v > 88:
-                    b >>= 13
-                    n -= 13
-                else:
-                    v = b & 16383
-                    b >>= 14
-                    n -= 14
-                out += b91.cipher[v % 91] + b91.cipher[v // 91]
-        if n:
-            out += b91.cipher[b % 91]
-            if n > 7 or b > 90:
-                out += b91.cipher[b // 91]
-        return out
+    """
+    #
+    # TODO Not going to encode passwords yet, will be used when I later implement a working web interface
+    #
+        def encode(source):
+            source = source.encode()
+            b = 0
+            n = 0
+            out = ''
+            for count in range(len(source)):
+                byte = source[count:count + 1]
+                b |= struct.unpack('B', byte)[0] << n
+                n += 8
+                if n > 13:
+                    v = b & 8191
+                    if v > 88:
+                        b >>= 13
+                        n -= 13
+                    else:
+                        v = b & 16383
+                        b >>= 14
+                        n -= 14
+                    out += b91.cipher[v % 91] + b91.cipher[v // 91]
+            if n:
+                out += b91.cipher[b % 91]
+                if n > 7 or b > 90:
+                    out += b91.cipher[b // 91]
+            return out
+    """
