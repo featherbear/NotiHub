@@ -9,22 +9,25 @@ Unofficial Facebook Chat API [https://github.com/Schmavery/facebook-chat-api]
 The following code is licensed under the GNU Public License Version v3.0
 """
 
-__VERSION__ = "0.0.1"
-
 import fbchat
+
 from .__stub__ import Service
 
+
 class service(Service):
-    _NAME = "PUSHBULLET"
-    _AUTHMETHOD = Service.TYPE_PASSWORD
+    __VERSION__ = "0.0.1"
+    __NAME__ = "MESSENGER"
+
     class Messenger(fbchat.Client):
         def registerOnMessage(self, function):
             self.handler = function
+
         def onMessage(self, message, author_id, thread_id, thread_type, ts, **kwargs):
-            self.handler(ts,thread_id, author_id, message)
+            self.handler(ts, thread_id, author_id, message)
+
     def connect(self):
-        self.messenger = self.Messenger(*self.authorisation)
-        self.messenger.registerOnMessage(self.handler)
+        self.messenger = self.Messenger(self.config.login, self.config.password)
+        self.messenger.registerOnMessage(self.config.handler)
         self.listen()
 
     def send(self, thread, data):

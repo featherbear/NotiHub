@@ -8,8 +8,8 @@ pushbullet.py [https://github.com/randomchars/pushbullet.py]
 The following code is licensed under the GNU Public License Version v3.0
 """
 
-__VERSION__ = "0.0.1"
 import pushbullet
+
 from .__stub__ import Service
 
 pushbullet.Pushbullet._push_ = pushbullet.Pushbullet._push
@@ -18,10 +18,11 @@ pushbullet.Pushbullet._push = lambda self, data: self._push_(
 
 
 class service(Service):
-    _NAME = "PUSHBULLET"
-    _AUTHMETHOD = Service.TYPE_API
+    __VERSION__ = "0.0.1"
+    __NAME__ = "PUSHBULLET"
+
     def connect(self):
-        self.pushbullet = pushbullet.Pushbullet(self.authorisation)
+        self.pushbullet = pushbullet.Pushbullet(self.config.login)
         self.listener = pushbullet.Listener(self.pushbullet,
                                             lambda event: (self._pushFetch() if event["type"] == "tickle" else None))
 
@@ -45,7 +46,7 @@ class service(Service):
             # Get only pushes directed to the NotiHub device - Do we want to keep this function?
             if ((push.get("target_device_iden", self.device.device_iden) == self.device.device_iden) and not (
                     push.get("dismissed", True))):
-                self.handler(push.get("created"), push.get("title", None), push.get("body", None))
+                self.config.handler(push.get("created"), push.get("title", None), push.get("body", None))
                 self.pushbullet.dismiss_push(push.get("iden"))
 
             self.last_push = max(self.last_push, push.get("created"))
@@ -61,4 +62,3 @@ class service(Service):
 
     def stopListen(self):
         self.listener.close()
-
