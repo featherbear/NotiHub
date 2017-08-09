@@ -10,9 +10,12 @@ import builtins
 import json
 import threading
 
-import tornado.httputil
-import tornado.ioloop
-import tornado.web
+try:
+    import tornado.httputil
+    import tornado.ioloop
+    import tornado.web
+except ModuleNotFoundError:
+    host = lambda *_: None
 
 if not hasattr(builtins, "dprint"): dprint = print
 
