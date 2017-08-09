@@ -11,8 +11,8 @@ class Service():
     __VERSION__ = ""
     __NAME__ = ""
 
-    def __init__(self, *config):
-        self.config = ConfigModel(*config)
+    def __init__(self, config):
+        self.config = config
 
     def connect(self, *_):
         raise Exception("Not implemented")
@@ -27,9 +27,8 @@ class Service():
         raise Exception("Not implemented")
 
     def handler(self, *_):
-        print("Stub handler")
-        print(*_)
-        raise Exception("Not implemented")
+        print("Stub Handler", *_)
+        #raise Exception("Not implemented")
 
 
 import importlib
@@ -62,13 +61,13 @@ def b91d(encoded_str):
             v = -1
     if v + 1:
         out += struct.pack('B', (b | v << n) & 255)
-    return out
+    return out.decode("utf-8")
 
 
 class ConfigModel():
     def __init__(self, obj: dict = None, *, login: str = None, password: str = None, send: bool = None,
                  receive: bool = None, handler=None):
-        if type(obj) == dict:
+        if type(obj) is dict:
             login = obj.get("email", obj.get("key"))
             assert type(login) is not None
             password = obj.get("password", None)
@@ -76,7 +75,7 @@ class ConfigModel():
             if type(send) != bool: send = False
             receive = obj.get("receive")
             if type(receive) != bool: receive = False
-            handler = obj.get("handler")
+            handler = obj.get("handler", "")
 
         self.isAPI = password is None
         self.isProtected = login.startswith("--")
@@ -84,9 +83,13 @@ class ConfigModel():
         self.password = password
         self.send = send
         self.receive = receive
+        if "::" in handler:
+            handler, func = handler.split("::",1)
+        else:
+            func = "handler"
         try:
-            self.handler = importlib.import_module("NotiHub.handler." + handler)
-        except (TypeError, ModuleNotFoundError):
+            self.handler = getattr(importlib.import_module("NotiHub.handler." + handler),func)
+        except ModuleNotFoundError:
             self.handler = Service.handler
 
     def getAuth(self):

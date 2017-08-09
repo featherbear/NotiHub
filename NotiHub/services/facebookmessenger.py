@@ -33,13 +33,13 @@ class service(Service):
     def send(self, thread, data):
         if self.canSend:
             # TODO what does the number do!??!
-            thread_type = 2 if self.messenger.graphql_request(fbchat.GraphQL(doc_id='1386147188135407', params={
+            thread_type = fbchat.ThreadType.GROUP if self.messenger.graphql_request(fbchat.GraphQL(doc_id='1386147188135407', params={
                 'id': thread,
                 'message_limit': 0,
                 'load_messages': False,
                 'load_read_receipts': False,
                 'before': None
-            })).get("thread_type") == "GROUP" else 1
+            })).get("thread_type") == "GROUP" else fbchat.ThreadType.USER
             return self.messenger.sendMessage(data, thread_id=thread, thread_type=thread_type)
 
     def listen(self):
