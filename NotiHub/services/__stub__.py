@@ -104,6 +104,6 @@ class ConfigModel():
             return self.login
         if self.isProtected:
             l = b91d(self.login[2:])
-            return (l, b91d(self.password[2:])) if not noPassword else l
+            return (l, b91d(self.password)) if not noPassword else l
         else:
             return (self.login, self.password) if not noPassword else self.login

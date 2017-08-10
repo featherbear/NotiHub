@@ -45,9 +45,9 @@ class serviceManger():
             if service in NotiHub.services.version:
                 service = getattr(NotiHub.services, service)
             else:
-                raise Exception("Could not find service:", service)
+                raise Exception("Could not find service: " + service)
         self.services.append(self.serviceInstant(service, config, len(self.services) + 1))
-        l.debug("Created new service! ID:", str(len(self.services)))
+        l.debug("Created new service! ID: " + str(len(self.services)))
 
     def query(self, general: str = None, *, is_api: bool = None, can_send: bool = None, can_receive: bool = None,
               type: str = None):
@@ -117,7 +117,7 @@ class Config():
                     except Exception as e:
                         print("Error", str(e), " (line: %s)" % str(line))
         except FileNotFoundError:
-            l.info(self.filename, "was not found, using defaults...")
+            l.info(self.filename + " was not found, using defaults...")
             # TODO LOAD DEFAULTS
         self.services = {}
         for category in config:
