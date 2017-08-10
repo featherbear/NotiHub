@@ -6,12 +6,14 @@ Copyright 2017 Andrew Wong <featherbear@navhaxs.au.eu.org>
 The following code is licensed under the GNU Public License Version v3.0
 """
 
-DEBUG = True
-import builtins
+DEBUG = False
+import logging
+logging.basicConfig(level=logging.INFO)
+l = logging.getLogger("NotiHub")
 
-builtins.dprint = lambda *args: print(*args) if DEBUG else None
 import NotiHub.services
 import NotiHub.web
+from NotiHub.database import db
 
 def communicate(*args):
-    print("\n\n\n\n"," ".join([*args]),"\n\n\n\n")
+    print(" ".join([*args]))

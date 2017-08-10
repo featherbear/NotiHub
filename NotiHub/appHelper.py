@@ -9,12 +9,13 @@ The following code is licensed under the GNU Public License Version v3.0
 import threading
 
 import NotiHub.services
+from NotiHub import l
 from NotiHub.services import __stub__
 
 
 class serviceManger():
     class serviceInstant(threading.Thread):
-        def __init__(self, serviceClass: __stub__.Service, config:__stub__.ConfigModel, id: int):
+        def __init__(self, serviceClass: __stub__.Service, config: __stub__.ConfigModel, id: int):
             super().__init__()
 
             self.service = serviceClass(config)
@@ -28,7 +29,6 @@ class serviceManger():
 
         def run(self):
             self.service.connect()
-            print("Connecting",self.meta["id"],self.meta["type"])
 
         def stopListen(self):
             self.service.stopListen()
@@ -40,15 +40,14 @@ class serviceManger():
         self.services = []
 
     def create(self, service: __stub__.Service, config: __stub__.ConfigModel):
-        if type(service) not in [str, object]: raise Exception("Invalid service") # TODO CHECK
+        if type(service) not in [str, object]: raise Exception("Invalid service")  # TODO CHECK
         if type(service) is str:
             if service in NotiHub.services.version:
                 service = getattr(NotiHub.services, service)
-                print("Successfully got service",service)
             else:
                 raise Exception("Could not find service:", service)
-        self.services.append(self.serviceInstant(service,config, len(self.services) + 1))
-        print("Created new service! ID:", len(self.services))
+        self.services.append(self.serviceInstant(service, config, len(self.services) + 1))
+        l.debug("Created new service! ID:", str(len(self.services)))
 
     def query(self, general: str = None, *, is_api: bool = None, can_send: bool = None, can_receive: bool = None,
               type: str = None):
@@ -118,7 +117,7 @@ class Config():
                     except Exception as e:
                         print("Error", str(e), " (line: %s)" % str(line))
         except FileNotFoundError:
-            print(self.filename, "was not found, using defaults...")
+            l.info(self.filename, "was not found, using defaults...")
             # TODO LOAD DEFAULTS
         self.services = {}
         for category in config:
