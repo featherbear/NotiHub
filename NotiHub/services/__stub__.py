@@ -6,11 +6,15 @@ Copyright 2017 Andrew Wong <featherbear@navhaxs.au.eu.org>
 The following code is licensed under the GNU Public License Version v3.0
 """
 
-
+try:
+    from NotiHub.database import db
+except Exception as e:
+    print(e)
+    class db: storeMessage = lambda *_: None
 class Service():
     __VERSION__ = ""
     __NAME__ = ""
-
+    id = None
     def __init__(self, config):
         self.config = config
 
@@ -28,14 +32,17 @@ class Service():
 
     def handler(self, *_):
         print("Stub Handler", *_)
-        #raise Exception("Not implemented")
+        # raise Exception("Not implemented")
 
+    def dbWriter(self,*args):
+        db.storeMessage(self.id,*args)
 
 import importlib
 import struct
 
 cipher = "n;:9xzNRr+oT$?_jeY>g6XBHfD[2y<FI3w*kQ8{^c}1\"sCuK(]M,Sv4LGt7ladW#Z5JU`E0O.p=%ihqm)@|P/&Ab!~V"
 cipher_table = dict((c, i) for i, c in enumerate(cipher))
+
 
 def b91d(encoded_str):
     v = -1
@@ -84,18 +91,19 @@ class ConfigModel():
         self.send = send
         self.receive = receive
         if "::" in handler:
-            handler, func = handler.split("::",1)
+            handler, func = handler.split("::", 1)
         else:
             func = "handler"
         try:
-            self.handler = getattr(importlib.import_module("NotiHub.handler." + handler),func)
+            self.handler = getattr(importlib.import_module("NotiHub.handler." + handler), func)
         except ModuleNotFoundError:
             self.handler = Service.handler
 
-    def getAuth(self):
+    def getAuth(self, noPassword=False):
         if self.isAPI:
             return self.login
         if self.isProtected:
-            return b91d(self.login[2:]), b91d(self.password[2:])
+            l = b91d(self.login[2:])
+            return (l, b91d(self.password[2:])) if not noPassword else l
         else:
-            return self.login, self.password
+            return (self.login, self.password) if not noPassword else self.login
