@@ -27,7 +27,7 @@ class service():
         pass
 
 
-from datetime import datetime, time
+from datetime import datetime
 
 import requests
 
@@ -47,7 +47,7 @@ https://api.tripview.com.au/realtime?region=syd&routes=CR_sc_u%2CCR_eh_d%2CCR_il
 
 """
 
- # HEAD https://api.transport.nsw.gov.au/v1/publictransport/timetables/complete/gtfs
+# HEAD https://api.transport.nsw.gov.au/v1/publictransport/timetables/complete/gtfs
 
 import peewee
 
@@ -75,8 +75,8 @@ class Calendar(GTFSModel):
     friday = peewee.BooleanField()
     saturday = peewee.BooleanField()
     sunday = peewee.BooleanField()
-    datestart = peewee.DateField()
-    dateend = peewee.DateField()
+    dateStart = peewee.DateField()
+    dateEnd = peewee.DateField()
 
 
 class CalendarDate(GTFSModel):
@@ -84,7 +84,7 @@ class CalendarDate(GTFSModel):
     # ???
     serviceID = peewee.ForeignKeyField(Calendar, related_name="dates")
     date = peewee.DateField()
-    exceptionType = peewee.IntegerField()
+    exceptionType = peewee.CharField()
 
 
 class Route(GTFSModel):
@@ -119,24 +119,28 @@ class StopTime(GTFSModel):
     tripID = peewee.ForeignKeyField(Calendar, related_name="times")
     stopID = peewee.ForeignKeyField(Stop, related_name="times")
     time = peewee.TimeField()
+
+
 models = [Agency, Calendar, CalendarDate, Route, Trip, Stop, StopTime]
 
 nswtransport_db.connect()
 
-
 #
 import csv
+
 #
 
 #
 #
-print("Checking for updated timetable...")
-with requests.get("https://api.transport.nsw.gov.au/v1/publictransport/timetables/complete/gtfs", headers={"Authorization": "apikey WUQ7i7CBYCQmlAf4uh8I5L7pjS9Zq5uZbNNF"}, stream=True) as gtfsSource:
+print("Checking for updated transport information...")
+with requests.get("https://api.transport.nsw.gov.au/v1/publictransport/timetables/complete/gtfs",
+                  headers={"Authorization": "apikey WUQ7i7CBYCQmlAf4uh8I5L7pjS9Zq5uZbNNF"}, stream=True) as gtfsSource:
     sourcetime = gtfsSource.headers["Last-Modified"]
     sourcetimestamp = int(datetime.strptime(sourcetime, '%a, %d %b %Y %H:%M:%S %Z').timestamp())
     if sourcetimestamp > nswtransport_db.pragma("user_version")[0]:
         print("New version: " + sourcetime)
-        import tempfile, os
+        import os
+
         # with tempfile.TemporaryDirectory() as tempdir:
         tempdir = "D:\\LOL"
         gtfsZip = os.path.join(tempdir, "gtfs.zip")
@@ -147,34 +151,57 @@ with requests.get("https://api.transport.nsw.gov.au/v1/publictransport/timetable
         #             f.write(chunk)
         print("Extracting")
         import zipfile
+
         with zipfile.ZipFile(gtfsZip, "r") as z:
             z.extractall(tempdir)
+
+
         class gtfsFile(object):
-            def __init__(self,filename):
-                self.csv = csv.reader(open(os.path.join(tempdir,filename+".txt")), delimiter=',')
-                next(self.csv,None)
+            def __init__(self, filename):
+                self.csv = csv.reader(open(os.path.join(tempdir, filename + ".txt")), delimiter=',')
+                next(self.csv, None)
+
             def __enter__(self):
                 return self.csv
-            def __exit__(self,*_):
+
+            def __exit__(self, *_):
                 pass
+
+
         print("Dropping and creating tables")
-        nswtransport_db.drop_tables(models, safe=True)
-        nswtransport_db.create_tables(models, safe=True)
+        nswtransport_db.drop_tables(models)
+        nswtransport_db.create_tables(models)
         print("Reading GTFS files")
-        with gtfsFile("agency") as agency, gtfsFile("calendar") as calendar, gtfsFile("calendar_dates") as calendar_dates, gtfsFile("routes") as routes, gtfsFile("stop_times") as stop_times, gtfsFile("stops") as stops, gtfsFile("trips") as trips:
-            #print("Populating agencies")
-            #[Agency.create(agencyID=row[0],agencyName=row[1]) for row in agency]
-            print("Populating services")
-            [Calendar.create(*row[:9]) for row in calendar]
-            [CalendarDate.create(*row) for row in calendar_dates]
-            [Route.create(*row[:6]) for row in routes]
-            [Stop.create(row[0],row[2],row[-1]) for row in stops]
-            [Trip.create(row[2],*row[:2],*row[4:7]) for row in trips]
-            print("Populating stop times")
-            [StopTime.create(row[0],row[3],row[1]) for row in stop_times]
+        with gtfsFile("agency") as agency, \
+                gtfsFile("calendar") as calendar, \
+                gtfsFile("calendar_dates") as calendar_dates, \
+                gtfsFile("routes") as routes, \
+                gtfsFile("stop_times") as stop_times, \
+                gtfsFile("stops") as stops, \
+                gtfsFile("trips") as trips:
+            print("Populating agencies")
+            [Agency.create(agencyID=row[0], agencyName=row[1]) for row in agency]
+            print("Populating calendar #1")
+            [Calendar.create(serviceID=row[0], monday=row[1], tuesday=row[2], wednesday=row[3], thursday=row[4],
+                             friday=row[5], saturday=row[6], sunday=row[7], dateStart=row[8], dateEnd=row[9]
+                             ) for row in calendar]
+            print("Populating calendar #2")
+            [CalendarDate.create(serviceID=row[0], date=row[1], exceptionType=row[2]) for row in calendar_dates]
+            print("Populating routes")
+            [Route.create(routeID=row[0], agency=row[1], shortName=row[2], longName=row[3], description=row[4],
+                          type=row[5]
+                          ) for row in routes]
+            print("Populating stops")
+            [Stop.create(stopID=row[0], name=row[2], platform=row[-1]) for row in stops]
+            print("Populating trips")
+            [Trip.create(tripID=row[2], routeID=row[0], serviceID=row[1], headsign=row[4], direction=row[5],
+                         blockID=row[6]
+                         ) for row in trips]
+            print("Populating timetable")
+            [StopTime.create(tripID=row[0], stopID=row[3], time=row[1]) for row in stop_times]
 
         nswtransport_db.pragma("user_version", sourcetimestamp)
-        print("Timetable information updated")
+        print("Transport information updated")
 # for o in requests.get("http://realtime.grofsoft.com/tripview/realtime?routes=SB_M41_u&type=dv").json()['delays']:
 #     o = o['offsets'].split(",")
 #     l = {}
