@@ -18,7 +18,7 @@ for _, pyfilefull, _ in pkgutil.walk_packages(path=pkgutil.extend_path(__path__,
         if pyfile == "__stub__": continue
         l.debug("  Importing " + pyfile)
         grabber = importlib.import_module(pyfilefull)
-        grabber = grabber.grabber
+        grabber = grabber.service
         grabbername = grabber.__NAME__.lower()
         try:
             version[grabbername] = grabber.__VERSION__

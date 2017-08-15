@@ -8,8 +8,8 @@ The following code is licensed under the GNU Public License Version v3.0
 
 __VERSION__ = "0.0.1"
 
-from .__stub__ import Grabber
-class grabber(Grabber):
+
+class service():
     def __init__(self, login, *, send, receive):
         self.canSend = send
         self.canReceive = receive
