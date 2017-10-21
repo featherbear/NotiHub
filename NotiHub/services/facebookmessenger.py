@@ -6,7 +6,7 @@ Copyright 2017 Andrew Wong <featherbear@navhaxs.au.eu.org>
 Unofficial Facebook Chat API for Python [https://github.com/carpedm20/fbchat]
 Unofficial Facebook Chat API [https://github.com/Schmavery/facebook-chat-api]
 
-The following code is licensed under the GNU Public License Version v3.0
+The following code is licensed under the MIT License
 """
 
 import fbchat
