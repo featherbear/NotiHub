@@ -9,13 +9,14 @@ The following code is licensed under the GNU Public License Version v3.0
 """
 
 __VERSION__ = "0.0.1"
+from .__stub__ import Grabber
 
 from datetime import datetime, timedelta, timezone
 from math import acos as AC, asin as AS, atan as AT, cos as C, floor as F, pi, sin as S, tan as T
 
 
 # https://maas.museum/observations/2007/10/30/how-to-calculate-sunrise-and-set-a-worked-example/
-class service():
+class grabber(Grabber):
     def __init__(self, login, *, send, receive):
         self.canSend = send
         self.canReceive = receive
