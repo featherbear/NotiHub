@@ -5,7 +5,7 @@ Copyright 2017 Andrew Wong <featherbear@navhaxs.au.eu.org>
 
 ??? [???]
 
-The following code is licensed under the GNU Public License Version v3.0
+The following code is licensed under the MIT License
 """
 
 __VERSION__ = "0.0.1"
@@ -20,9 +20,6 @@ class grabber(Grabber):
     def __init__(self, login, *, send, receive):
         self.canSend = send
         self.canReceive = receive
-        pass
-
-    def send(self, thread, data):
         pass
 
     @staticmethod

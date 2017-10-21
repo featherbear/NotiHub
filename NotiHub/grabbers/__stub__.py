@@ -3,18 +3,15 @@
 NotiHub
 Copyright 2017 Andrew Wong <featherbear@navhaxs.au.eu.org>
 
-The following code is licensed under the GNU Public License Version v3.0
+The following code is licensed under the MIT License
 """
 
+print("STUB CALLED")
 class Grabber():
     __VERSION__ = ""
     __NAME__ = ""
     def __init__(self, apikey):
         self.apikey = apikey
 
-    def connect(self, *_):
+    def grab(self, *_):
         raise Exception("Not implemented")
-
-    def handler(self, *_):
-        print("Stub Handler", *_)
-        # raise Exception("Not implemented")
